@@ -11,6 +11,9 @@ const { connect: connectMongo, getDb } = require("./DB/mongo");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isProd = process.env.NODE_ENV === "production";
+
+if (isProd) app.set("trust proxy", 1);
 
 // ── Simple logger ──────────────────────────────────────────
 function log(tag, msg, data) {
@@ -21,7 +24,7 @@ function log(tag, msg, data) {
 
 // ── Middleware ──────────────────────────────────────────────
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: isProd ? (process.env.CLIENT_ORIGIN || true) : "http://localhost:5173",
   credentials: true,
 }));
 app.use(express.json());
@@ -32,17 +35,24 @@ app.use(
     secret: process.env.SESSION_SECRET || "sentience-dev-secret-change-me",
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 * 24, sameSite: "lax" }, // 1 day
+    cookie: { maxAge: 1000 * 60 * 60 * 24, sameSite: isProd ? "none" : "lax", secure: isProd },
   })
 );
 
-// Block direct browser access — redirect to Vite (5173)
-app.use((req, res, next) => {
-  if (req.method === 'GET' && !req.headers['x-vite-proxy'] && !req.path.startsWith('/api')) {
-    return res.redirect('http://localhost:5173' + req.url);
-  }
-  next();
-});
+// Block direct browser access — redirect to Vite (5173) in dev only
+if (!isProd) {
+  app.use((req, res, next) => {
+    if (req.method === 'GET' && !req.headers['x-vite-proxy'] && !req.path.startsWith('/api')) {
+      return res.redirect('http://localhost:5173' + req.url);
+    }
+    next();
+  });
+}
+
+// In production, serve the built React client as static files
+if (isProd) {
+  app.use(express.static(path.join(__dirname, "..", "client", "dist")));
+}
 
 // Request logger middleware
 app.use((req, res, next) => {
@@ -454,13 +464,11 @@ app.get("/api/stock", async (req, res) => {
   }
 });
 
-// ── Catchall: anything else → check session ────────────────
+// ── Catchall: SPA fallback in prod, redirect in dev ─────────
 app.get("/{*path}", (req, res) => {
-  if (req.session && req.session.user) {
-    log("ROUTE", "Catchall: authenticated user, redirecting to React app");
-    return res.redirect('/');
+  if (isProd) {
+    return res.sendFile(path.join(__dirname, "..", "client", "dist", "index.html"));
   }
-  log("ROUTE", "Catchall: unauthenticated, redirecting to landing");
   return res.redirect("/");
 });
 
