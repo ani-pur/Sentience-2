@@ -1,25 +1,39 @@
 """
-Pulse ML Pipeline
+Sentience ML Pipeline
 Run in order:
   1. python ml_pipeline.py install     → installs all libraries
   2. python ml_pipeline.py score       → FinBERT scores every post
   3. python ml_pipeline.py features    → extracts all parameters
   4. python ml_pipeline.py aggregate   → builds daily buckets
-  5. python ml_pipeline.py train       → trains LSTM
-  6. python ml_pipeline.py predict     → generates CSS + 14-day projection
+  5. python ml_pipeline.py anomalies   → z-score anomaly detection
+  6. python ml_pipeline.py train       → trains LSTM
+  7. python ml_pipeline.py predict     → generates CSS (0-100) + 14-day projection
+  8. python ml_pipeline.py correlate   → sentiment-stock correlation
+  9. python ml_pipeline.py sms         → Sentiment Momentum Score + alerts
 """
 
 import sys
 import os
 from pymongo import MongoClient
 from datetime import datetime, timezone, timedelta
+from pathlib import Path
 
-MONGO_URI = "mongodb://localhost:27017/"
-DB_NAME   = "pulse"
+# Load .env from project root
+_env_path = Path(__file__).resolve().parent.parent / ".env"
+if _env_path.exists():
+    for line in _env_path.read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            k, v = line.split("=", 1)
+            os.environ.setdefault(k.strip(), v.strip())
+
+MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017/")
+DB_NAME   = "sentience-mongoDB"
 AI_BRANDS = ["openai", "anthropic", "google", "xai", "deepseek", "microsoft", "alibaba"]
 
 def get_db():
-    return MongoClient(MONGO_URI)[DB_NAME]
+    import certifi
+    return MongoClient(MONGO_URI, tlsCAFile=certifi.where())[DB_NAME]
 
 # ══════════════════════════════════════════════════════════
 # STEP 1 — INSTALL
@@ -27,7 +41,7 @@ def get_db():
 
 def install():
     print("Installing ML libraries...")
-    os.system("pip install transformers torch vaderSentiment scikit-learn pandas numpy pymongo")
+    os.system("pip install transformers torch vaderSentiment scikit-learn pandas numpy pymongo certifi")
     print("✅ Done. Run: python ml_pipeline.py score")
 
 # ══════════════════════════════════════════════════════════
@@ -71,7 +85,8 @@ def score():
                     fb_score = -conf
                 else:
                     fb_score = 0.0
-            except:
+            except Exception as e:
+                print(f"    ⚠ FinBERT error on post {post.get('_id')}: {e}")
                 fb_score = 0.0
 
             # VADER score (on comments too)
@@ -120,13 +135,14 @@ def features():
         raw        = (score * ratio) + (comments * 2)
         return round(min(raw / 1000, 10), 2)  # normalize to 0-10
 
+    from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+    vader_feat = SentimentIntensityAnalyzer()
+
     def comment_alignment(post, raw_score):
         comments = post.get("comments", [])
         if not comments:
             return "unknown"
-        from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-        vader    = SentimentIntensityAnalyzer()
-        scores   = [vader.polarity_scores(c.get("body",""))["compound"] for c in comments if c.get("body")]
+        scores   = [vader_feat.polarity_scores(c.get("body",""))["compound"] for c in comments if c.get("body")]
         if not scores:
             return "unknown"
         avg = sum(scores) / len(scores)
@@ -211,7 +227,7 @@ def aggregate():
                 dt  = datetime.fromisoformat(ts)
                 day = dt.strftime("%Y-%m-%d")
                 buckets[day].append(post)
-            except:
+            except ValueError:
                 continue
 
         rows = []
@@ -243,10 +259,86 @@ def aggregate():
             col.insert_many(rows)
             print(f"  ✅ {brand.upper()} — {len(rows)} daily buckets saved")
 
-    print("\n✅ Aggregation complete. Run: python ml_pipeline.py train")
+    print("\n✅ Aggregation complete. Run: python ml_pipeline.py anomalies")
 
 # ══════════════════════════════════════════════════════════
-# STEP 5 — TRAIN LSTM
+# STEP 5 — ANOMALY DETECTION
+# ══════════════════════════════════════════════════════════
+
+# Interdependency map: AI company → hardware/infra dependencies
+INTERDEPENDENCIES = {
+    "openai":    [("NVDA", "NVIDIA"), ("MSFT", "Microsoft")],
+    "anthropic": [("NVDA", "NVIDIA"), ("AMD", "AMD"), ("AMZN", "Amazon")],
+    "google":    [("NVDA", "NVIDIA"), ("AMD", "AMD"), ("AVGO", "Broadcom"), ("005930.KS", "Samsung"), ("TSM", "TSMC")],
+    "xai":       [("NVDA", "NVIDIA")],
+    "deepseek":  [("NVDA", "NVIDIA"), ("AMD", "AMD")],
+    "microsoft": [("NVDA", "NVIDIA"), ("AMD", "AMD"), ("INTC", "Intel")],
+    "alibaba":   [("NVDA", "NVIDIA"), ("TSM", "TSMC")],
+}
+
+def anomalies():
+    """Z-score anomaly detection on daily sentiment with volume gating."""
+    import numpy as np
+    db  = get_db()
+    col = db["daily_sentiment"]
+    out = db["anomalies"]
+    out.drop()
+
+    WINDOW = 14  # rolling baseline window (days)
+    Z_THRESH = 2.0
+    VOL_MULT = 1.5
+
+    total = 0
+    for brand in AI_BRANDS:
+        rows = list(col.find({"brand": brand, "is_projection": False}).sort("date", 1))
+        if len(rows) < WINDOW + 1:
+            print(f"  ⚠ {brand.upper()} — not enough data for anomaly detection ({len(rows)} days). Skipping.")
+            continue
+
+        scores  = np.array([r["weighted_score"] for r in rows])
+        volumes = np.array([r["post_volume"] for r in rows])
+
+        anomaly_rows = []
+        for i in range(WINDOW, len(rows)):
+            window_scores = scores[i - WINDOW:i]
+            window_vols   = volumes[i - WINDOW:i]
+
+            mean_s = window_scores.mean()
+            std_s  = window_scores.std()
+            mean_v = window_vols.mean()
+
+            if std_s < 1e-6:
+                continue  # no variance in window
+
+            z_score = (scores[i] - mean_s) / std_s
+            vol_elevated = volumes[i] > (mean_v * VOL_MULT)
+
+            if abs(z_score) >= Z_THRESH and vol_elevated:
+                direction = "bullish" if z_score > 0 else "bearish"
+                deps = INTERDEPENDENCIES.get(brand, [])
+                anomaly_rows.append({
+                    "brand":        brand,
+                    "date":         rows[i]["date"],
+                    "z_score":      round(float(z_score), 3),
+                    "direction":    direction,
+                    "weighted_score": rows[i]["weighted_score"],
+                    "post_volume":  int(volumes[i]),
+                    "rolling_mean": round(float(mean_s), 4),
+                    "rolling_std":  round(float(std_s), 4),
+                    "dependencies": [{"ticker": t, "name": n} for t, n in deps],
+                })
+
+        if anomaly_rows:
+            out.insert_many(anomaly_rows)
+            total += len(anomaly_rows)
+            print(f"  ✅ {brand.upper()} — {len(anomaly_rows)} anomalies detected")
+        else:
+            print(f"  ✅ {brand.upper()} — no anomalies")
+
+    print(f"\n✅ Anomaly detection complete — {total} total anomalies. Run: python ml_pipeline.py train")
+
+# ══════════════════════════════════════════════════════════
+# STEP 6 — TRAIN LSTM
 # ══════════════════════════════════════════════════════════
 
 def train():
@@ -299,23 +391,54 @@ def train():
     X = torch.tensor(np.array(all_X), dtype=torch.float32)
     y = torch.tensor(np.array(all_y), dtype=torch.float32).unsqueeze(1)
 
+    # 80/20 train/test split (chronological — no shuffle)
+    split = int(len(X) * 0.8)
+    X_train, X_test = X[:split], X[split:]
+    y_train, y_test = y[:split], y[split:]
+
     model     = LSTMModel(input_size=len(FEATURES))
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     criterion = nn.MSELoss()
 
-    print(f"\n  Training LSTM on {len(X)} sequences across {len(AI_BRANDS)} brands...")
+    print(f"\n  Training LSTM on {len(X_train)} sequences (test: {len(X_test)})...")
     model.train()
+    for epoch in range(EPOCHS):
+        optimizer.zero_grad()
+        loss = criterion(model(X_train), y_train)
+        loss.backward()
+        optimizer.step()
+        if (epoch + 1) % 10 == 0:
+            print(f"    Epoch {epoch+1}/{EPOCHS} — Train Loss: {loss.item():.6f}")
+
+    # Evaluate on test set
+    model.eval()
+    with torch.no_grad():
+        test_loss = criterion(model(X_test), y_test).item()
+        train_loss = criterion(model(X_train), y_train).item()
+        preds = model(X_test).squeeze().numpy()
+        actuals = y_test.squeeze().numpy()
+        mae = float(np.mean(np.abs(preds - actuals)))
+
+    print(f"\n  📊 Train MSE: {train_loss:.6f}")
+    print(f"  📊 Test MSE:  {test_loss:.6f}")
+    print(f"  📊 Test MAE:  {mae:.6f}")
+
+    # Retrain on full data for production model
+    print(f"\n  Retraining on full dataset ({len(X)} sequences) for deployment...")
+    model.train()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     for epoch in range(EPOCHS):
         optimizer.zero_grad()
         loss = criterion(model(X), y)
         loss.backward()
         optimizer.step()
-        if (epoch + 1) % 10 == 0:
-            print(f"    Epoch {epoch+1}/{EPOCHS} — Loss: {loss.item():.6f}")
 
     torch.save(model.state_dict(), "pulse_lstm.pt")
     with open("pulse_scalers.pkl", "wb") as f:
-        pickle.dump({"scalers": scalers, "features": FEATURES, "seq_len": SEQ_LEN}, f)
+        pickle.dump({
+            "scalers": scalers, "features": FEATURES, "seq_len": SEQ_LEN,
+            "metrics": {"train_mse": train_loss, "test_mse": test_loss, "test_mae": mae}
+        }, f)
 
     print("\n✅ Model saved → pulse_lstm.pt")
     print("✅ Scalers saved → pulse_scalers.pkl")
@@ -380,11 +503,11 @@ def predict():
             window   = torch.tensor(data[i-SEQ_LEN:i], dtype=torch.float32).unsqueeze(0)
             with torch.no_grad():
                 css = model(window).item()
-            css = max(-1.0, min(1.0, css * 2 - 1))  # rescale to -1 to +1
+            css = max(0, min(100, round(css * 100, 2)))  # rescale to 0-100
             graph_rows.append({
                 "brand":         brand,
                 "date":          rows[i]["date"],
-                "css":           round(css, 4),
+                "css":           css,
                 "post_volume":   rows[i].get("post_volume", 0),
                 "is_projection": False,
             })
@@ -397,20 +520,20 @@ def predict():
             inp = torch.tensor(future_window, dtype=torch.float32).unsqueeze(0)
             with torch.no_grad():
                 css = model(inp).item()
-            css = max(-1.0, min(1.0, css * 2 - 1))
+            css = max(0, min(100, round(css * 100, 2)))  # rescale to 0-100
 
             future_date = (last_date + timedelta(days=day)).strftime("%Y-%m-%d")
             graph_rows.append({
                 "brand":         brand,
                 "date":          future_date,
-                "css":           round(css, 4),
+                "css":           css,
                 "post_volume":   0,
                 "is_projection": True,
             })
 
             # Roll window forward
             new_row         = future_window[-1].copy()
-            new_row[0]      = (css + 1) / 2  # convert back to 0-1 scale
+            new_row[0]      = css / 100  # convert back to 0-1 scale for scaler
             future_window   = np.vstack([future_window[1:], new_row])
 
         out_col.insert_many(graph_rows)
@@ -419,24 +542,214 @@ def predict():
         print(f"  ✅ {brand.upper()} — {hist} historical points + {proj} projections saved")
 
     print("\n✅ sentiment_graph collection ready!")
-    print("Run: python ml_pipeline.py predict  ← re-run anytime after retraining")
+    print("Run: python ml_pipeline.py correlate")
+
+# ══════════════════════════════════════════════════════════
+# STEP 8 — STOCK CORRELATION
+# ══════════════════════════════════════════════════════════
+
+def correlate():
+    """Compute Pearson correlation between AI sentiment deltas and hardware stock deltas at multiple lags."""
+    import numpy as np
+    import pandas as pd
+    db = get_db()
+
+    # Map AI brand → list of (ticker, stock_collection_name)
+    STOCK_MAP = {
+        "openai":    ["nvidia", "microsoft"],
+        "anthropic": ["nvidia", "amd", "amazon"],
+        "google":    ["nvidia", "amd", "broadcom", "samsung", "tsmc"],
+        "xai":       ["nvidia"],
+        "deepseek":  ["nvidia", "amd"],
+        "microsoft": ["nvidia", "amd", "intel"],
+        "alibaba":   ["nvidia", "tsmc"],
+    }
+    LAGS = [1, 2, 3, 5, 7]  # days
+
+    out_col = db["correlations"]
+    out_col.drop()
+    results = []
+
+    for brand in AI_BRANDS:
+        # Get daily sentiment
+        sent_rows = list(db["daily_sentiment"].find({"brand": brand, "is_projection": False}).sort("date", 1))
+        if len(sent_rows) < 10:
+            print(f"  ⚠ {brand.upper()} — too few days for correlation. Skipping.")
+            continue
+
+        sent_df = pd.DataFrame(sent_rows)[["date", "weighted_score"]]
+        sent_df["date"] = pd.to_datetime(sent_df["date"])
+        sent_df = sent_df.sort_values("date").set_index("date")
+        sent_df["sent_delta"] = sent_df["weighted_score"].diff()
+
+        stock_names = STOCK_MAP.get(brand, [])
+        for stock_name in stock_names:
+            stock_col_name = f"{stock_name}_stock"
+            stock_rows = list(db[stock_col_name].find())
+            if not stock_rows:
+                continue
+
+            stock_df = pd.DataFrame(stock_rows)
+            # Stock data has date in "Price" column (CSV artifact)
+            date_col = "Date" if "Date" in stock_df.columns else "Price"
+            if date_col not in stock_df.columns or "Close" not in stock_df.columns:
+                continue
+            # Filter out header artifact rows
+            stock_df = stock_df[stock_df[date_col].str.match(r"^\d{4}-", na=False)].copy()
+            stock_df["date"] = pd.to_datetime(stock_df[date_col])
+            stock_df["Close"] = pd.to_numeric(stock_df["Close"], errors="coerce")
+            stock_df = stock_df.dropna(subset=["date", "Close"])
+            stock_df = stock_df.sort_values("date").set_index("date")
+            stock_df["price_delta"] = stock_df["Close"].pct_change()
+
+            # Merge on date
+            merged = sent_df[["sent_delta"]].join(stock_df[["price_delta"]], how="inner").dropna()
+            if len(merged) < 5:
+                continue
+
+            for lag in LAGS:
+                lagged = sent_df[["sent_delta"]].copy()
+                lagged.index = lagged.index + pd.Timedelta(days=lag)
+                lag_merged = lagged.join(stock_df[["price_delta"]], how="inner").dropna()
+                if len(lag_merged) < 5:
+                    continue
+
+                corr = float(lag_merged["sent_delta"].corr(lag_merged["price_delta"]))
+                if np.isnan(corr):
+                    continue
+
+                results.append({
+                    "brand":       brand,
+                    "stock":       stock_name,
+                    "lag_days":    lag,
+                    "correlation": round(corr, 4),
+                    "n_samples":   len(lag_merged),
+                })
+
+        print(f"  ✅ {brand.upper()} — correlation computed for {len(stock_names)} stocks")
+
+    if results:
+        out_col.insert_many(results)
+    print(f"\n✅ Stock correlation complete — {len(results)} entries. Run: python ml_pipeline.py sms")
+
+# ══════════════════════════════════════════════════════════
+# STEP 9 — SENTIMENT MOMENTUM SCORE (SMS) + DECISION RULE
+# ══════════════════════════════════════════════════════════
+
+def sms():
+    """Compute SMS per brand per day and fire alerts based on decision rules."""
+    import numpy as np
+    db = get_db()
+
+    sent_col = db["daily_sentiment"]
+    graph_col = db["sentiment_graph"]
+    alert_col = db["alerts"]
+    sms_col   = db["sms_scores"]
+    alert_col.drop()
+    sms_col.drop()
+
+    all_sms = []
+    all_alerts = []
+
+    for brand in AI_BRANDS:
+        rows = list(sent_col.find({"brand": brand, "is_projection": False}).sort("date", 1))
+        if len(rows) < 4:
+            print(f"  ⚠ {brand.upper()} — not enough data for SMS. Skipping.")
+            continue
+
+        # Get LSTM predictions for direction
+        predictions = {r["date"]: r["css"] for r in graph_col.find({"brand": brand})}
+
+        scores = np.array([r["weighted_score"] for r in rows])
+        volumes = np.array([r["post_volume"] for r in rows])
+
+        for i in range(3, len(rows)):
+            current = scores[i]
+            # Sentiment velocity: rate of change over last 3 windows
+            velocity = (scores[i] - scores[i - 3]) / 3
+
+            # Volume anomaly factor: current vs rolling average
+            rolling_vol = volumes[max(0, i - 7):i].mean() if i >= 1 else volumes[i]
+            vol_factor = (volumes[i] / rolling_vol - 1) if rolling_vol > 0 else 0
+            vol_factor = max(-1, min(1, vol_factor))  # clamp
+
+            # LSTM predicted direction (from CSS: >50 = positive, <50 = negative)
+            css_val = predictions.get(rows[i]["date"], 50)
+            lstm_direction = (css_val - 50) / 50  # normalize to [-1, +1]
+
+            # SMS formula (0-100 scale): base at 50
+            raw_sms = (0.4 * current) + (0.3 * velocity) + (0.2 * vol_factor) + (0.1 * lstm_direction)
+            sms_score = max(0, min(100, round((raw_sms + 1) * 50, 2)))
+
+            sms_entry = {
+                "brand":     brand,
+                "date":      rows[i]["date"],
+                "sms":       sms_score,
+                "current_sentiment": round(float(current), 4),
+                "velocity":  round(float(velocity), 4),
+                "vol_factor": round(float(vol_factor), 4),
+                "lstm_dir":  round(float(lstm_direction), 4),
+            }
+            all_sms.append(sms_entry)
+
+            # Decision rules
+            deps = INTERDEPENDENCIES.get(brand, [])
+            if sms_score < 35 and deps:
+                for ticker, name in deps:
+                    all_alerts.append({
+                        "brand":     brand,
+                        "date":      rows[i]["date"],
+                        "type":      "negative_impact",
+                        "sms":       sms_score,
+                        "message":   f"Potential negative stock impact on {name} ({ticker})",
+                        "ticker":    ticker,
+                        "stock_name": name,
+                    })
+
+            # Sustained positive momentum: SMS > 75 for 2+ consecutive windows
+            if sms_score > 75 and i >= 4:
+                prev_sms_raw = (0.4 * scores[i-1]) + (0.3 * (scores[i-1] - scores[i-4]) / 3) + (0.2 * 0) + (0.1 * 0)
+                prev_sms = (prev_sms_raw + 1) * 50
+                if prev_sms > 75 and deps:
+                    for ticker, name in deps:
+                        all_alerts.append({
+                            "brand":     brand,
+                            "date":      rows[i]["date"],
+                            "type":      "positive_momentum",
+                            "sms":       sms_score,
+                            "message":   f"Sustained positive momentum — check {name} ({ticker}) position",
+                            "ticker":    ticker,
+                            "stock_name": name,
+                        })
+
+        print(f"  ✅ {brand.upper()} — {len([s for s in all_sms if s['brand'] == brand])} SMS scores")
+
+    if all_sms:
+        sms_col.insert_many(all_sms)
+    if all_alerts:
+        alert_col.insert_many(all_alerts)
+
+    print(f"\n✅ SMS complete — {len(all_sms)} scores, {len(all_alerts)} alerts fired.")
 
 # ══════════════════════════════════════════════════════════
 # ENTRYPOINT
 # ══════════════════════════════════════════════════════════
 
 COMMANDS = {
-    "install":   install,
-    "score":     score,
-    "features":  features,
-    "aggregate": aggregate,
-    "train":     train,
-    "predict":   predict,
+    "install":    install,
+    "score":      score,
+    "features":   features,
+    "aggregate":  aggregate,
+    "anomalies":  anomalies,
+    "train":      train,
+    "predict":    predict,
+    "correlate":  correlate,
+    "sms":        sms,
 }
 
 if __name__ == "__main__":
     if len(sys.argv) < 2 or sys.argv[1] not in COMMANDS:
-        print("Usage: python ml_pipeline.py [install|score|features|aggregate|train|predict]")
+        print("Usage: python ml_pipeline.py [install|score|features|aggregate|anomalies|train|predict|correlate|sms]")
         print("\nRun in order:")
         for i, cmd in enumerate(COMMANDS, 1):
             print(f"  {i}. python ml_pipeline.py {cmd}")

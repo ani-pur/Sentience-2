@@ -1,35 +1,50 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from "react";
+import { useUser, useBrands, useSentiment, useDaily, usePosts } from "./hooks/useApi";
+import Header from "./components/Header";
+import SentimentChart from "./components/SentimentChart";
+import MetricCards from "./components/MetricCards";
+import PostsFeed from "./components/PostsFeed";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const { user, loading: authLoading } = useUser();
+  const { brands } = useBrands();
+  const [selectedBrand, setSelectedBrand] = useState("openai");
+  const { data: sentimentData, loading: chartLoading } = useSentiment(selectedBrand);
+  const { data: dailyData, loading: dailyLoading } = useDaily(selectedBrand);
+  const { posts, loading: postsLoading } = usePosts(selectedBrand);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-bg-dark flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-primary">
+            <svg className="w-12 h-12 mx-auto mb-4" fill="none" viewBox="0 0 48 48">
+              <path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z" fill="currentColor" />
+            </svg>
+          </div>
+          <p className="text-slate-500 animate-pulse">Loading Sentience...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="min-h-screen bg-bg-dark">
+      {/* Background glows */}
+      <div className="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[120px]" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[120px]" />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+
+      <Header user={user} brands={brands} selected={selectedBrand} onSelect={setSelectedBrand} />
+
+      <main className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+        <MetricCards data={dailyData} loading={dailyLoading} />
+        <SentimentChart data={sentimentData} brand={selectedBrand} loading={chartLoading} />
+        <PostsFeed posts={posts} loading={postsLoading} />
+      </main>
+    </div>
+  );
 }
 
-export default App
+export default App;

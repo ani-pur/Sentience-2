@@ -1,3 +1,4 @@
+require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
 const express = require("express");
 const session = require("express-session");
 const initSqlJs = require("sql.js");
@@ -5,6 +6,7 @@ const bcrypt = require("bcryptjs");
 const path = require("path");
 const fs = require("fs");
 const cors = require("cors");
+const { connect: connectMongo, getDb } = require("./DB/mongo");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,7 +19,10 @@ function log(tag, msg, data) {
 }
 
 // ── Middleware ──────────────────────────────────────────────
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -26,7 +31,7 @@ app.use(
     secret: process.env.SESSION_SECRET || "sentience-dev-secret-change-me",
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 * 24 }, // 1 day
+    cookie: { maxAge: 1000 * 60 * 60 * 24, sameSite: "lax" }, // 1 day
   })
 );
 
@@ -85,12 +90,12 @@ function saveDB() {
   log("DB", "Database saved to disk");
 }
 
-// ── Helper: serve an HTML file from storage ────────────────
-const storagePath = path.resolve(__dirname, "..", "storage");
+// ── Helper: serve an HTML file from views ──────────────────
+const viewsPath = path.join(__dirname, "views");
 
 function sendPage(res, filename) {
   log("PAGE", `Serving ${filename}`);
-  res.sendFile(path.join(storagePath, filename));
+  res.sendFile(path.join(viewsPath, filename));
 }
 
 // ── Auth middleware (for protected routes) ──────────────────
@@ -156,10 +161,12 @@ app.post("/login", (req, res) => {
     return res.status(401).send("Invalid username or password.");
   }
 
-  // Hash matches → create session and redirect to dashboard
+  // Hash matches → create session and redirect to React app
   req.session.user = { id: row.id, username: row.username, email: row.email };
   log("AUTH", "Login successful, session created", { id: row.id, username: row.username });
-  return res.redirect("/dashboard");
+  // Redirect back to the referring origin (works through Vite proxy or directly)
+  const origin = req.headers.referer ? new URL(req.headers.referer).origin : "http://localhost:5173";
+  return res.redirect(origin);
 });
 
 // POST /signup – create new user
@@ -210,7 +217,8 @@ app.post("/signup", (req, res) => {
     email: newUser.email,
   };
   log("AUTH", "Signup successful, session created", { id: newUser.id, username: newUser.username });
-  return res.redirect("/dashboard");
+  const origin = req.headers.referer ? new URL(req.headers.referer).origin : "http://localhost:5173";
+  return res.redirect(origin);
 });
 
 // ── Logout ─────────────────────────────────────────────────
@@ -224,24 +232,176 @@ app.get("/logout", (req, res) => {
 
 // ── Protected Routes ───────────────────────────────────────
 
-// Dashboard / profile (requires auth)
+// Dashboard — redirect to React app
 app.get("/dashboard", requireAuth, (req, res) => {
-  log("AUTH", "Dashboard access granted", { user: req.session.user.username });
-  sendPage(res, "profile.html");
+  log("AUTH", "Dashboard access granted, redirecting to React app", { user: req.session.user.username });
+  return res.redirect("http://localhost:5173");
+});
+
+// ── Session check (for React SPA) ────────────────────────
+app.get("/api/me", (req, res) => {
+  if (req.session && req.session.user) {
+    return res.json(req.session.user);
+  }
+  return res.status(401).json({ error: "Not authenticated" });
+});
+
+// ── Sentiment API (MongoDB) ──────────────────────────────────
+
+app.get("/api/sentiment", async (req, res) => {
+  const db = getDb();
+  if (!db) return res.status(503).json({ error: "MongoDB not connected" });
+  const brand = req.query.brand;
+  const data = await db.collection("sentiment_graph")
+                       .find({ brand })
+                       .sort({ date: 1 })
+                       .toArray();
+  res.json(data);
+});
+
+app.get("/api/brands", async (req, res) => {
+  const db = getDb();
+  if (!db) return res.status(503).json({ error: "MongoDB not connected" });
+  const brands = await db.collection("sentiment_graph").distinct("brand");
+  res.json(brands);
+});
+
+app.get("/api/posts", async (req, res) => {
+  const db = getDb();
+  if (!db) return res.status(503).json({ error: "MongoDB not connected" });
+  const brand = req.query.brand;
+  const posts = await db.collection(brand)
+                        .find({ type: "post" })
+                        .sort({ created_utc: 1 })
+                        .toArray();
+  res.json(posts);
+});
+
+app.get("/api/daily", async (req, res) => {
+  const db = getDb();
+  if (!db) return res.status(503).json({ error: "MongoDB not connected" });
+  const brand = req.query.brand;
+  const data = await db.collection("daily_sentiment")
+                       .find({ brand })
+                       .sort({ date: 1 })
+                       .toArray();
+  res.json(data);
+});
+
+// ── Anomalies API ───────────────────────────────────────────
+app.get("/api/anomalies", async (req, res) => {
+  const db = getDb();
+  if (!db) return res.status(503).json({ error: "MongoDB not connected" });
+  const brand = req.query.brand;
+  const query = brand ? { brand } : {};
+  const data = await db.collection("anomalies")
+                       .find(query)
+                       .sort({ date: -1 })
+                       .toArray();
+  res.json(data);
+});
+
+// ── Stock Correlations API ─────────────────────────────────
+app.get("/api/correlations", async (req, res) => {
+  const db = getDb();
+  if (!db) return res.status(503).json({ error: "MongoDB not connected" });
+  const brand = req.query.brand;
+  const query = brand ? { brand } : {};
+  const data = await db.collection("correlations")
+                       .find(query)
+                       .toArray();
+  res.json(data);
+});
+
+// ── SMS Scores API ─────────────────────────────────────────
+app.get("/api/sms", async (req, res) => {
+  const db = getDb();
+  if (!db) return res.status(503).json({ error: "MongoDB not connected" });
+  const brand = req.query.brand;
+  const query = brand ? { brand } : {};
+  const data = await db.collection("sms_scores")
+                       .find(query)
+                       .sort({ date: 1 })
+                       .toArray();
+  res.json(data);
+});
+
+// ── Alerts API ─────────────────────────────────────────────
+app.get("/api/alerts", async (req, res) => {
+  const db = getDb();
+  if (!db) return res.status(503).json({ error: "MongoDB not connected" });
+  const brand = req.query.brand;
+  const query = brand ? { brand } : {};
+  const data = await db.collection("alerts")
+                       .find(query)
+                       .sort({ date: -1 })
+                       .toArray();
+  res.json(data);
+});
+
+// ── Interdependency Network API ────────────────────────────
+app.get("/api/network", async (req, res) => {
+  const network = {
+    nodes: [
+      { id: "openai", type: "ai", label: "OpenAI" },
+      { id: "anthropic", type: "ai", label: "Anthropic" },
+      { id: "google", type: "ai", label: "Google" },
+      { id: "xai", type: "ai", label: "xAI" },
+      { id: "deepseek", type: "ai", label: "DeepSeek" },
+      { id: "microsoft", type: "ai", label: "Microsoft" },
+      { id: "alibaba", type: "ai", label: "Alibaba" },
+      { id: "NVDA", type: "hardware", label: "NVIDIA" },
+      { id: "AMD", type: "hardware", label: "AMD" },
+      { id: "AMZN", type: "hardware", label: "Amazon" },
+      { id: "AVGO", type: "hardware", label: "Broadcom" },
+      { id: "INTC", type: "hardware", label: "Intel" },
+      { id: "TSM", type: "hardware", label: "TSMC" },
+      { id: "MSFT", type: "hardware", label: "Microsoft (Azure)" },
+      { id: "005930.KS", type: "hardware", label: "Samsung" },
+    ],
+    edges: [
+      { source: "openai", target: "NVDA" },
+      { source: "openai", target: "MSFT" },
+      { source: "anthropic", target: "NVDA" },
+      { source: "anthropic", target: "AMD" },
+      { source: "anthropic", target: "AMZN" },
+      { source: "google", target: "NVDA" },
+      { source: "google", target: "AMD" },
+      { source: "google", target: "AVGO" },
+      { source: "google", target: "005930.KS" },
+      { source: "google", target: "TSM" },
+      { source: "xai", target: "NVDA" },
+      { source: "deepseek", target: "NVDA" },
+      { source: "deepseek", target: "AMD" },
+      { source: "microsoft", target: "NVDA" },
+      { source: "microsoft", target: "AMD" },
+      { source: "microsoft", target: "INTC" },
+      { source: "alibaba", target: "NVDA" },
+      { source: "alibaba", target: "TSM" },
+    ],
+  };
+  res.json(network);
 });
 
 // ── Catchall: anything else → check session ────────────────
 app.get("/{*path}", (req, res) => {
   if (req.session && req.session.user) {
-    log("ROUTE", "Catchall: authenticated user, redirecting to dashboard");
-    return res.redirect("/dashboard");
+    log("ROUTE", "Catchall: authenticated user, redirecting to React app");
+    return res.redirect("http://localhost:5173");
   }
   log("ROUTE", "Catchall: unauthenticated, redirecting to landing");
   return res.redirect("/");
 });
 
 // ── Start ──────────────────────────────────────────────────
-initDB().then(() => {
+initDB().then(async () => {
+  try {
+    await connectMongo();
+    log("MONGO", "MongoDB connected");
+  } catch (err) {
+    log("MONGO", "MongoDB unavailable — API endpoints will fail", { error: err.message });
+  }
+
   app.listen(PORT, "0.0.0.0", () => {
     log("SERVER", `Sentience server running on http://0.0.0.0:${PORT}`);
     log("SERVER", `Local network: have friends connect to http://<your-ip>:${PORT}`);
