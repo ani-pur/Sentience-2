@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   AreaChart,
   Area,
@@ -42,7 +43,23 @@ function StockTooltip({ active, payload, label }) {
   );
 }
 
+const TIME_RANGES = [
+  { label: "1W", days: 7 },
+  { label: "1M", days: 30 },
+  { label: "3M", days: 90 },
+  { label: "All", days: null },
+];
+
+function filterByRange(data, days) {
+  if (!days) return data;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  const cutoffStr = cutoff.toISOString().split("T")[0];
+  return data.filter((d) => d.date >= cutoffStr);
+}
+
 export default function StockChart({ stock, brand, loading }) {
+  const [range, setRange] = useState("All");
   const brandName = BRAND_NAMES[brand] || brand;
 
   if (loading) {
@@ -74,7 +91,10 @@ export default function StockChart({ stock, brand, loading }) {
     );
   }
 
-  // Public company with no data
+  const selectedRange = TIME_RANGES.find((r) => r.label === range);
+  const filteredData = filterByRange(stock.data || [], selectedRange?.days);
+
+  // Public company with no data at all
   if (!stock.data?.length) {
     return (
       <div className="bg-panel border border-border rounded-2xl p-6 h-[340px] flex items-center justify-center">
@@ -83,15 +103,18 @@ export default function StockChart({ stock, brand, loading }) {
     );
   }
 
-  const prices = stock.data.map((d) => d.price);
-  const minPrice = Math.min(...prices);
-  const maxPrice = Math.max(...prices);
-  const latest = prices[prices.length - 1];
-  const prev = prices[prices.length - 2] ?? latest;
+  // Use full data for price/change stats, filtered for chart
+  const allPrices = stock.data.map((d) => d.price);
+  const latest = allPrices[allPrices.length - 1];
+  const prev = allPrices[allPrices.length - 2] ?? latest;
   const change = latest - prev;
   const changePct = ((change / prev) * 100).toFixed(2);
   const isUp = change >= 0;
   const changeColor = isUp ? "text-emerald-400" : "text-red-400";
+
+  const prices = filteredData.length ? filteredData.map((d) => d.price) : allPrices;
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
 
   // Y-axis domain with 5% padding
   const pad = (maxPrice - minPrice) * 0.05;
@@ -107,6 +130,23 @@ export default function StockChart({ stock, brand, loading }) {
             {brandName} &middot; <span className="text-primary font-mono">{stock.ticker}</span>
           </p>
         </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center bg-[#0a1a1d] rounded-lg p-0.5 gap-0.5">
+            {TIME_RANGES.map((r) => (
+              <button
+                key={r.label}
+                onClick={() => setRange(r.label)}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                  range === r.label
+                    ? "bg-emerald-400/20 text-emerald-400"
+                    : "text-slate-500 hover:text-slate-300"
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="text-right">
           <p className="text-2xl font-bold text-slate-100">${latest.toFixed(2)}</p>
           <p className={`text-xs font-semibold ${changeColor}`}>
@@ -116,7 +156,7 @@ export default function StockChart({ stock, brand, loading }) {
       </div>
 
       <ResponsiveContainer width="100%" height={240}>
-        <AreaChart data={stock.data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+        <AreaChart data={filteredData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
           <defs>
             <linearGradient id="stockGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#34d399" stopOpacity={0.25} />

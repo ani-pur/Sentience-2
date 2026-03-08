@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   AreaChart,
   Area,
@@ -43,7 +44,24 @@ function CustomTooltip({ active, payload, label }) {
   );
 }
 
+const TIME_RANGES = [
+  { label: "1W", days: 7 },
+  { label: "1M", days: 30 },
+  { label: "3M", days: 90 },
+  { label: "All", days: null },
+];
+
+function filterByRange(data, days) {
+  if (!days) return data;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  const cutoffStr = cutoff.toISOString().split("T")[0];
+  return data.filter((d) => d.date >= cutoffStr);
+}
+
 export default function SentimentChart({ data, brand, loading }) {
+  const [range, setRange] = useState("All");
+
   if (loading) {
     return (
       <div className="bg-panel border border-border rounded-2xl p-6 h-[400px] flex items-center justify-center">
@@ -64,8 +82,11 @@ export default function SentimentChart({ data, brand, loading }) {
     );
   }
 
+  const selectedRange = TIME_RANGES.find((r) => r.label === range);
+  const filtered = filterByRange(data, selectedRange?.days);
+
   // Prepare data: historical vs projected
-  const chartData = data.map((d) => ({
+  const chartData = filtered.map((d) => ({
     date: d.date,
     css: d.css,
     post_volume: d.post_volume,
@@ -88,18 +109,34 @@ export default function SentimentChart({ data, brand, loading }) {
           <h2 className="text-lg font-bold">Composite Sentiment Score</h2>
           <p className="text-sm text-slate-500">{BRAND_NAMES[brand] || brand}</p>
         </div>
-        <div className="flex items-center gap-4 text-xs text-slate-500">
-          <span className="flex items-center gap-1.5">
-            <span className="w-4 h-0.5 rounded" style={{ background: "#25d1f4" }} /> Historical
-          </span>
-          <span className="flex items-center gap-2">
-            <span className="flex items-center gap-[3px]">
-              <span className="w-1.5 h-0.5 rounded-full" style={{ background: "#25d2f48d" }} />
-              <span className="w-1.5 h-0.5 rounded-full" style={{ background: "#25d2f48d" }} />
-
+        <div className="flex items-center gap-4">
+          <div className="flex items-center bg-[#0a1a1d] rounded-lg p-0.5 gap-0.5">
+            {TIME_RANGES.map((r) => (
+              <button
+                key={r.label}
+                onClick={() => setRange(r.label)}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                  range === r.label
+                    ? "bg-primary/20 text-primary"
+                    : "text-slate-500 hover:text-slate-300"
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-4 text-xs text-slate-500">
+            <span className="flex items-center gap-1.5">
+              <span className="w-4 h-0.5 rounded" style={{ background: "#25d1f4" }} /> Historical
             </span>
-            Projected
-          </span>
+            <span className="flex items-center gap-2">
+              <span className="flex items-center gap-[3px]">
+                <span className="w-1.5 h-0.5 rounded-full" style={{ background: "#25d2f48d" }} />
+                <span className="w-1.5 h-0.5 rounded-full" style={{ background: "#25d2f48d" }} />
+              </span>
+              Projected
+            </span>
+          </div>
         </div>
       </div>
       <ResponsiveContainer width="100%" height={320}>

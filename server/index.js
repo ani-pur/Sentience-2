@@ -418,28 +418,47 @@ const BRAND_TICKERS = {
   xai: null,
 };
 
-function fetchYahoo(url) {
+// ── Yahoo Finance helpers (crumb auth for cloud/datacenter IPs) ──
+const YF_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+let yfCrumb = null;
+let yfCookie = null;
+let yfCrumbExpiry = 0;
+
+function httpsGet(url, extraHeaders = {}) {
   return new Promise((resolve, reject) => {
-    https.get(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "application/json",
-      },
-    }, (response) => {
-      // Follow redirects
+    const headers = { "User-Agent": YF_UA, ...extraHeaders };
+    https.get(url, { headers }, (response) => {
       if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
-        return fetchYahoo(response.headers.location).then(resolve, reject);
+        const cookies = response.headers["set-cookie"];
+        if (cookies) extraHeaders["Cookie"] = cookies.map((c) => c.split(";")[0]).join("; ");
+        return httpsGet(response.headers.location, extraHeaders).then(resolve, reject);
       }
       let body = "";
       response.on("data", (chunk) => { body += chunk; });
-      response.on("end", () => {
-        if (response.statusCode !== 200) {
-          return reject(new Error(`Yahoo returned ${response.statusCode}: ${body.slice(0, 200)}`));
-        }
-        try { resolve(JSON.parse(body)); } catch (e) { reject(new Error(`JSON parse failed: ${body.slice(0, 200)}`)); }
-      });
+      response.on("end", () => resolve({ status: response.statusCode, headers: response.headers, body }));
     }).on("error", reject);
   });
+}
+
+async function getYahooCrumb() {
+  if (yfCrumb && Date.now() < yfCrumbExpiry) return { crumb: yfCrumb, cookie: yfCookie };
+
+  // Step 1: hit Yahoo Finance to get consent cookies
+  const page = await httpsGet("https://fc.yahoo.com/");
+  const cookies = page.headers["set-cookie"];
+  const cookieStr = cookies ? cookies.map((c) => c.split(";")[0]).join("; ") : "";
+
+  // Step 2: get crumb using the cookies
+  const crumbRes = await httpsGet("https://query2.finance.yahoo.com/v1/test/getcrumb", { Cookie: cookieStr });
+  if (crumbRes.status !== 200 || !crumbRes.body) {
+    throw new Error(`Crumb fetch failed: ${crumbRes.status}`);
+  }
+
+  yfCrumb = crumbRes.body;
+  yfCookie = cookieStr;
+  yfCrumbExpiry = Date.now() + 1000 * 60 * 30; // cache 30 min
+  log("STOCK", "Yahoo crumb refreshed");
+  return { crumb: yfCrumb, cookie: yfCookie };
 }
 
 app.get("/api/stock", async (req, res) => {
@@ -451,41 +470,45 @@ app.get("/api/stock", async (req, res) => {
   }
 
   const end = Math.floor(Date.now() / 1000);
-  // Use the caller's start date (aligns with sentiment graph) or fall back to 90 days
   const start = req.query.from
     ? Math.floor(new Date(req.query.from).getTime() / 1000)
     : end - 90 * 24 * 60 * 60;
 
-  const hosts = ["query2.finance.yahoo.com", "query1.finance.yahoo.com"];
-  let lastErr;
+  try {
+    // Try with crumb auth first (needed for cloud IPs)
+    const { crumb, cookie } = await getYahooCrumb();
+    const url = `https://query2.finance.yahoo.com/v8/finance/chart/${ticker}?period1=${start}&period2=${end}&interval=1d&crumb=${encodeURIComponent(crumb)}`;
+    const resp = await httpsGet(url, { Cookie: cookie, Accept: "application/json" });
 
-  for (const host of hosts) {
-    const url = `https://${host}/v8/finance/chart/${ticker}?period1=${start}&period2=${end}&interval=1d`;
-    try {
-      const raw = await fetchYahoo(url);
-
-      const result = raw.chart?.result?.[0];
-      if (!result) return res.json({ ticker, private: false, data: [] });
-
-      const timestamps = result.timestamp || [];
-      const closes = result.indicators?.quote?.[0]?.close || [];
-
-      const data = timestamps
-        .map((ts, i) => ({
-          date: new Date(ts * 1000).toISOString().split("T")[0],
-          price: closes[i] != null ? +closes[i].toFixed(2) : null,
-        }))
-        .filter((p) => p.price != null);
-
-      return res.json({ ticker, private: false, data });
-    } catch (err) {
-      log("STOCK", `Failed with ${host}`, { ticker, error: err.message });
-      lastErr = err;
+    if (resp.status !== 200) {
+      // Invalidate crumb and retry once
+      yfCrumb = null;
+      const fresh = await getYahooCrumb();
+      const retryUrl = `https://query2.finance.yahoo.com/v8/finance/chart/${ticker}?period1=${start}&period2=${end}&interval=1d&crumb=${encodeURIComponent(fresh.crumb)}`;
+      const retry = await httpsGet(retryUrl, { Cookie: fresh.cookie, Accept: "application/json" });
+      if (retry.status !== 200) throw new Error(`Yahoo returned ${retry.status}: ${retry.body.slice(0, 200)}`);
+      resp.body = retry.body;
     }
-  }
 
-  log("STOCK", "All Yahoo hosts failed", { ticker, error: lastErr?.message });
-  res.status(502).json({ error: "Failed to fetch stock data" });
+    const raw = JSON.parse(resp.body);
+    const result = raw.chart?.result?.[0];
+    if (!result) return res.json({ ticker, private: false, data: [] });
+
+    const timestamps = result.timestamp || [];
+    const closes = result.indicators?.quote?.[0]?.close || [];
+
+    const data = timestamps
+      .map((ts, i) => ({
+        date: new Date(ts * 1000).toISOString().split("T")[0],
+        price: closes[i] != null ? +closes[i].toFixed(2) : null,
+      }))
+      .filter((p) => p.price != null);
+
+    return res.json({ ticker, private: false, data });
+  } catch (err) {
+    log("STOCK", "Failed to fetch stock data", { ticker, error: err.message });
+    res.status(502).json({ error: "Failed to fetch stock data" });
+  }
 });
 
 // ── Catchall: SPA fallback in prod, redirect in dev ─────────
