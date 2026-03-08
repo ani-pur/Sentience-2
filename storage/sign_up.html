@@ -11,9 +11,6 @@
         rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap"
         rel="stylesheet" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
-        rel="stylesheet" />
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -39,12 +36,6 @@
             background-size: 30px 30px;
             opacity: 0.1;
         }
-
-        .form-input:focus+label,
-        .form-input:not(:placeholder-shown)+label {
-            transform: translateY(-1.5rem) scale(0.85);
-            color: #25d1f4;
-        }
     </style>
 </head>
 
@@ -55,24 +46,20 @@
     <div class="relative z-10 flex flex-col min-h-screen">
         <!-- Navigation -->
         <header
-            class="flex items-center justify-between px-6 py-4 md:px-12 border-b border-slate-custom/30 backdrop-blur-md sticky top-0 bg-background-dark/80">
-            <div class="flex items-center gap-3">
+            class="flex items-center justify-between px-6 py-4 md:px-12 border-b border-slate-custom/30 backdrop-blur-md sticky top-0 z-50 bg-background-dark/80">
+            <a href="/" class="flex items-center gap-3 no-underline">
                 <div class="text-primary">
                     <svg class="w-8 h-8" fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
                         <path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z" fill="currentColor"></path>
                     </svg>
                 </div>
-                <h2 class="text-xl font-bold tracking-tight">Sentience</h2>
-            </div>
-            <div class="hidden md:flex gap-6 text-sm font-medium">
-                <a class="hover:text-primary transition-colors" href="#">Infrastructure</a>
-                <a class="hover:text-primary transition-colors" href="#">Ecosystem</a>
-                <a class="hover:text-primary transition-colors" href="#">Docs</a>
-            </div>
-            <button
-                class="bg-primary/10 text-primary border border-primary/20 px-5 py-2 rounded-lg text-sm font-bold hover:bg-primary hover:text-background-dark transition-all">
-                Mainnet
-            </button>
+                <h2 class="text-xl font-bold tracking-tight text-slate-100">Sentience</h2>
+            </a>
+            <a href="https://github.com/TejasVaradaraj/HackAI2026" target="_blank"
+                class="bg-primary/10 text-primary border border-primary/20 px-5 py-2 rounded-lg text-sm font-bold hover:bg-primary hover:text-background-dark transition-all no-underline flex items-center gap-2">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                GitHub
+            </a>
         </header>
         <!-- Main Content -->
         <main class="flex-1 flex items-center justify-center p-6">
@@ -89,57 +76,49 @@
                                 Create Account</h1>
                             <p class="text-slate-400">Join the Sentience decentralized network today.</p>
                         </div>
-                        <form class="space-y-6">
-                            <!-- Full Name -->
-                            <div class="relative group">
+                        <form class="space-y-6" action="/signup" method="POST" id="signupForm">
+                            <!-- Username -->
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-slate-300" for="username">Username</label>
                                 <input
-                                    class="form-input peer w-full bg-background-dark/50 border border-slate-custom/50 rounded-lg px-4 py-4 text-slate-100 focus:outline-none focus:border-primary transition-all placeholder-transparent"
-                                    id="name" placeholder=" " type="text" />
-                                <label
-                                    class="absolute left-4 top-4 text-slate-400 transition-all pointer-events-none origin-left"
-                                    for="name">Full Name</label>
-                                <div class="absolute right-4 top-4 text-slate-600 group-focus-within:text-primary">
-                                    <span class="material-symbols-outlined">person</span>
-                                </div>
+                                    class="w-full bg-background-dark/50 border border-slate-custom/50 rounded-lg px-4 py-4 text-slate-100 focus:outline-none focus:border-primary transition-all placeholder-slate-600"
+                                    id="username" name="username" placeholder="johndoe" type="text" required />
                             </div>
                             <!-- Email Address -->
-                            <div class="relative group">
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-slate-300" for="email">Email Address</label>
                                 <input
-                                    class="form-input peer w-full bg-background-dark/50 border border-slate-custom/50 rounded-lg px-4 py-4 text-slate-100 focus:outline-none focus:border-primary transition-all placeholder-transparent"
-                                    id="email" placeholder=" " type="email" />
-                                <label
-                                    class="absolute left-4 top-4 text-slate-400 transition-all pointer-events-none origin-left"
-                                    for="email">Email Address</label>
-                                <div class="absolute right-4 top-4 text-slate-600 group-focus-within:text-primary">
-                                    <span class="material-symbols-outlined">alternate_email</span>
-                                </div>
+                                    class="w-full bg-background-dark/50 border border-slate-custom/50 rounded-lg px-4 py-4 text-slate-100 focus:outline-none focus:border-primary transition-all placeholder-slate-600"
+                                    id="email" name="email" placeholder="name@example.com" type="email" required />
+                                <p id="emailError" class="text-red-400 text-xs px-1 hidden">Please enter a valid email address</p>
                             </div>
                             <!-- Password -->
-                            <div class="relative group">
-                                <input
-                                    class="form-input peer w-full bg-background-dark/50 border border-slate-custom/50 rounded-lg px-4 py-4 text-slate-100 focus:outline-none focus:border-primary transition-all placeholder-transparent"
-                                    id="password" placeholder=" " type="password" />
-                                <label
-                                    class="absolute left-4 top-4 text-slate-400 transition-all pointer-events-none origin-left"
-                                    for="password">Password</label>
-                                <div
-                                    class="absolute right-4 top-4 text-slate-600 group-focus-within:text-primary flex gap-2">
-                                    <button class="hover:text-primary transition-colors" type="button">
-                                        <span class="material-symbols-outlined">visibility</span>
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-slate-300" for="password">Password</label>
+                                <div class="relative">
+                                    <input
+                                        class="w-full bg-background-dark/50 border border-slate-custom/50 rounded-lg px-4 py-4 pr-12 text-slate-100 focus:outline-none focus:border-primary transition-all placeholder-slate-600"
+                                        id="password" name="password" placeholder="••••••••" type="password" required />
+                                    <button class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-primary transition-colors" type="button" onclick="togglePassword('password', this)">
+                                        <svg class="w-5 h-5 eye-open" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                        <svg class="w-5 h-5 eye-closed hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
                                     </button>
                                 </div>
                             </div>
                             <!-- Confirm Password -->
-                            <div class="relative group">
-                                <input
-                                    class="form-input peer w-full bg-background-dark/50 border border-slate-custom/50 rounded-lg px-4 py-4 text-slate-100 focus:outline-none focus:border-primary transition-all placeholder-transparent"
-                                    id="confirm_password" placeholder=" " type="password" />
-                                <label
-                                    class="absolute left-4 top-4 text-slate-400 transition-all pointer-events-none origin-left"
-                                    for="confirm_password">Confirm Password</label>
-                                <div class="absolute right-4 top-4 text-slate-600 group-focus-within:text-primary">
-                                    <span class="material-symbols-outlined">lock</span>
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium text-slate-300" for="confirm_password">Confirm Password</label>
+                                <div class="relative">
+                                    <input
+                                        class="w-full bg-background-dark/50 border border-slate-custom/50 rounded-lg px-4 py-4 pr-12 text-slate-100 focus:outline-none focus:border-primary transition-all placeholder-slate-600"
+                                        id="confirm_password" name="confirm_password" placeholder="••••••••" type="password" required />
+                                    <button class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-primary transition-colors" type="button" onclick="togglePassword('confirm_password', this)">
+                                        <svg class="w-5 h-5 eye-open" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                        <svg class="w-5 h-5 eye-closed hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                                    </button>
                                 </div>
+                                <p id="matchError" class="text-red-400 text-xs px-1 hidden">Passwords do not match</p>
+                                <p id="matchSuccess" class="text-green-400 text-xs px-1 hidden">Passwords match ✓</p>
                             </div>
                             <div class="flex items-center gap-2 px-1">
                                 <input
@@ -151,14 +130,14 @@
                             </div>
                             <button
                                 class="w-full bg-primary text-background-dark font-bold py-4 rounded-lg shadow-[0_0_20px_rgba(37,209,244,0.3)] hover:shadow-[0_0_30px_rgba(37,209,244,0.5)] transition-all hover:scale-[1.01] active:scale-[0.98]"
-                                type="submit">
+                                type="submit" id="submitBtn">
                                 Create Account
                             </button>
                         </form>
                         <div class="mt-8 text-center">
                             <p class="text-slate-400 text-sm">
                                 Already have an account?
-                                <a class="text-primary font-bold hover:underline ml-1" href="#">Log in</a>
+                                <a class="text-primary font-bold hover:underline ml-1" href="/login">Log in</a>
                             </p>
                         </div>
                     </div>
@@ -190,6 +169,101 @@
     <div
         class="fixed bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent blur-sm">
     </div>
+
+    <script>
+        // ── Live email validation ──────────────────────────
+        const emailInput = document.getElementById('email');
+        const emailError = document.getElementById('emailError');
+
+        emailInput.addEventListener('input', () => {
+            const val = emailInput.value.trim();
+            if (val.length === 0) {
+                emailError.classList.add('hidden');
+                emailInput.classList.remove('border-red-500', 'border-green-500');
+                return;
+            }
+            const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+            if (!isValid) {
+                emailError.classList.remove('hidden');
+                emailInput.classList.add('border-red-500');
+                emailInput.classList.remove('border-green-500');
+            } else {
+                emailError.classList.add('hidden');
+                emailInput.classList.remove('border-red-500');
+                emailInput.classList.add('border-green-500');
+            }
+        });
+
+        // ── Live password match check ──────────────────────
+        const passwordInput = document.getElementById('password');
+        const confirmInput = document.getElementById('confirm_password');
+        const matchError = document.getElementById('matchError');
+        const matchSuccess = document.getElementById('matchSuccess');
+
+        function checkPasswordMatch() {
+            const pw = passwordInput.value;
+            const cpw = confirmInput.value;
+
+            if (cpw.length === 0) {
+                matchError.classList.add('hidden');
+                matchSuccess.classList.add('hidden');
+                confirmInput.classList.remove('border-red-500', 'border-green-500');
+                return;
+            }
+
+            if (pw !== cpw) {
+                matchError.classList.remove('hidden');
+                matchSuccess.classList.add('hidden');
+                confirmInput.classList.add('border-red-500');
+                confirmInput.classList.remove('border-green-500');
+            } else {
+                matchError.classList.add('hidden');
+                matchSuccess.classList.remove('hidden');
+                confirmInput.classList.remove('border-red-500');
+                confirmInput.classList.add('border-green-500');
+            }
+        }
+
+        passwordInput.addEventListener('input', checkPasswordMatch);
+        confirmInput.addEventListener('input', checkPasswordMatch);
+
+        // ── Toggle password visibility ─────────────────────
+        function togglePassword(fieldId, btn) {
+            const field = document.getElementById(fieldId);
+            const eyeOpen = btn.querySelector('.eye-open');
+            const eyeClosed = btn.querySelector('.eye-closed');
+            if (field.type === 'password') {
+                field.type = 'text';
+                eyeOpen.classList.add('hidden');
+                eyeClosed.classList.remove('hidden');
+            } else {
+                field.type = 'password';
+                eyeOpen.classList.remove('hidden');
+                eyeClosed.classList.add('hidden');
+            }
+        }
+
+        // ── Form submit guard ──────────────────────────────
+        document.getElementById('signupForm').addEventListener('submit', (e) => {
+            const email = emailInput.value.trim();
+            const pw = passwordInput.value;
+            const cpw = confirmInput.value;
+            const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+            if (!isEmailValid) {
+                e.preventDefault();
+                emailError.classList.remove('hidden');
+                emailInput.focus();
+                return;
+            }
+            if (pw !== cpw) {
+                e.preventDefault();
+                matchError.classList.remove('hidden');
+                confirmInput.focus();
+                return;
+            }
+        });
+    </script>
 </body>
 
 </html>

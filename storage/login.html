@@ -65,18 +65,18 @@
                         <p class="text-slate-500 dark:text-slate-400 text-sm">Please enter your details to sign in</p>
                     </div>
                     <!-- Login Form -->
-                    <form action="#" class="space-y-6" method="POST">
+                    <form action="/login" class="space-y-6" method="POST">
                         <!-- Email Field -->
                         <div class="space-y-2">
-                            <label class="text-sm font-medium px-1" for="email">Email address</label>
+                            <label class="text-sm font-medium px-1" for="username">Username</label>
                             <div class="relative group">
                                 <div
                                     class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary transition-colors">
-                                    <span class="material-symbols-outlined text-[20px]">mail</span>
+                                    <span class="material-symbols-outlined text-[20px]">person</span>
                                 </div>
                                 <input
                                     class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white"
-                                    id="email" name="email" placeholder="name@company.com" required="" type="email" />
+                                    id="username" name="username" placeholder="johndoe" required="" type="text" />
                             </div>
                         </div>
                         <!-- Password Field -->
@@ -108,33 +108,9 @@
                             Log In
                         </button>
                     </form>
-                    <!-- Divider -->
-                    <div class="relative my-8">
-                        <div class="absolute inset-0 flex items-center">
-                            <div class="w-full border-t border-slate-200 dark:border-slate-700"></div>
-                        </div>
-                        <div class="relative flex justify-center text-xs uppercase">
-                            <span class="bg-white dark:bg-background-dark px-2 text-slate-500">Or continue with</span>
-                        </div>
-                    </div>
-                    <!-- Social Login (Visual Placeholder) -->
-                    <div class="grid grid-cols-2 gap-4 mb-8">
-                        <button
-                            class="flex items-center justify-center gap-2 py-2 px-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm font-medium">
-                            <img alt="" class="w-4 h-4" data-alt="Google Logo Icon"
-                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmppVsSAQ8UhHj2NMFprwy3x8BVHFht1QucgVa2AQ5CBfo9_i-x_zJ7tUM6kNgyffodUbug_ruJivBSueY6_IyLPq55w8qrdZXpdZHg2qRXNtQSYMZvhwH_c2ZQgUI61Xttb0Y8PkunmfO8zR8nGx7CF2YUbUk8RJosM28HtEIUUoik4B2T4Eqo8hqhz4IUlB7RsDZZeqUxvjaoNzrZN92zMDUFznRrYCAYZigrG99Fl0sDgilPJ3udvqMYMciyYt_3Mc6WLF2j0Y" />
-                            Google
-                        </button>
-                        <button
-                            class="flex items-center justify-center gap-2 py-2 px-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm font-medium">
-                            <span class="material-symbols-outlined text-[20px]">terminal</span>
-                            Github
-                        </button>
-                    </div>
                     <!-- Footer Link -->
-                    <p class="text-center text-sm text-slate-500 dark:text-slate-400">
-                        Don't have an account?
-                        <a class="font-semibold text-primary hover:underline" href="#">Create an account</a>
+                    <p class="text-center text-sm text-slate-500 dark:text-slate-400 mt-8">
+                        <a class="font-semibold text-primary hover:underline" href="/signup">Sign up</a>
                     </p>
                 </div>
             </main>
