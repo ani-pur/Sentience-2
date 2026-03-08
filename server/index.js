@@ -368,6 +368,10 @@ app.get("/api/alerts", async (req, res) => {
   res.json(data);
 });
 
+// ── Chat API ───────────────────────────────────────────────
+const chatRouter = require("./routes/chat");
+app.use("/api/chat", chatRouter);
+
 // ── Interdependency Network API ────────────────────────────
 app.get("/api/network", async (req, res) => {
   const network = {

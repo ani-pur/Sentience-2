@@ -5,6 +5,7 @@ import SentimentChart from "./components/SentimentChart";
 import MetricCards from "./components/MetricCards";
 import PostsFeed from "./components/PostsFeed";
 import StockChart from "./components/StockChart";
+import ChatWidget from "./components/ChatWidget";
 
 function App() {
   const { user, loading: authLoading } = useUser();
@@ -53,6 +54,7 @@ function App() {
         <PostsFeed posts={posts} loading={postsLoading} />
         <StockChart stock={stock} brand={selectedBrand} loading={stockLoading} />
       </main>
+      <ChatWidget brand={selectedBrand} />
     </div>
   );
 }
