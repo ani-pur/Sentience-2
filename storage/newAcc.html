@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Sentience - Join the Network</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#25d1f4",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#101f22",
+                        "slate-custom": "#224249",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        .dot-grid {
+            background-image: radial-gradient(circle, #25d1f4 1px, transparent 1px);
+            background-size: 30px 30px;
+            opacity: 0.1;
+        }
+
+        .form-input:focus+label,
+        .form-input:not(:placeholder-shown)+label {
+            transform: translateY(-1.5rem) scale(0.85);
+            color: #25d1f4;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen relative overflow-x-hidden">
+    <!-- Subtle Dot Grid Background -->
+    <div class="fixed inset-0 dot-grid pointer-events-none"></div>
+    <div class="relative z-10 flex flex-col min-h-screen">
+        <!-- Navigation -->
+        <header
+            class="flex items-center justify-between px-6 py-4 md:px-12 border-b border-slate-custom/30 backdrop-blur-md sticky top-0 bg-background-dark/80">
+            <div class="flex items-center gap-3">
+                <div class="text-primary">
+                    <svg class="w-8 h-8" fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z" fill="currentColor"></path>
+                    </svg>
+                </div>
+                <h2 class="text-xl font-bold tracking-tight">Sentience</h2>
+            </div>
+            <div class="hidden md:flex gap-6 text-sm font-medium">
+                <a class="hover:text-primary transition-colors" href="#">Infrastructure</a>
+                <a class="hover:text-primary transition-colors" href="#">Ecosystem</a>
+                <a class="hover:text-primary transition-colors" href="#">Docs</a>
+            </div>
+            <button
+                class="bg-primary/10 text-primary border border-primary/20 px-5 py-2 rounded-lg text-sm font-bold hover:bg-primary hover:text-background-dark transition-all">
+                Mainnet
+            </button>
+        </header>
+        <!-- Main Content -->
+        <main class="flex-1 flex items-center justify-center p-6">
+            <div class="w-full max-w-lg">
+                <!-- Signup Card -->
+                <div
+                    class="bg-slate-custom/10 border border-slate-custom/30 backdrop-blur-xl rounded-xl p-8 md:p-12 shadow-2xl relative overflow-hidden">
+                    <!-- Accent Gradient -->
+                    <div class="absolute -top-24 -right-24 w-48 h-48 bg-primary/20 blur-3xl rounded-full"></div>
+                    <div class="relative z-10">
+                        <div class="mb-10">
+                            <h1
+                                class="text-3xl font-extrabold mb-2 bg-gradient-to-r from-white to-primary bg-clip-text text-transparent">
+                                Create Account</h1>
+                            <p class="text-slate-400">Join the Sentience decentralized network today.</p>
+                        </div>
+                        <form class="space-y-6">
+                            <!-- Full Name -->
+                            <div class="relative group">
+                                <input
+                                    class="form-input peer w-full bg-background-dark/50 border border-slate-custom/50 rounded-lg px-4 py-4 text-slate-100 focus:outline-none focus:border-primary transition-all placeholder-transparent"
+                                    id="name" placeholder=" " type="text" />
+                                <label
+                                    class="absolute left-4 top-4 text-slate-400 transition-all pointer-events-none origin-left"
+                                    for="name">Full Name</label>
+                                <div class="absolute right-4 top-4 text-slate-600 group-focus-within:text-primary">
+                                    <span class="material-symbols-outlined">person</span>
+                                </div>
+                            </div>
+                            <!-- Email Address -->
+                            <div class="relative group">
+                                <input
+                                    class="form-input peer w-full bg-background-dark/50 border border-slate-custom/50 rounded-lg px-4 py-4 text-slate-100 focus:outline-none focus:border-primary transition-all placeholder-transparent"
+                                    id="email" placeholder=" " type="email" />
+                                <label
+                                    class="absolute left-4 top-4 text-slate-400 transition-all pointer-events-none origin-left"
+                                    for="email">Email Address</label>
+                                <div class="absolute right-4 top-4 text-slate-600 group-focus-within:text-primary">
+                                    <span class="material-symbols-outlined">alternate_email</span>
+                                </div>
+                            </div>
+                            <!-- Password -->
+                            <div class="relative group">
+                                <input
+                                    class="form-input peer w-full bg-background-dark/50 border border-slate-custom/50 rounded-lg px-4 py-4 text-slate-100 focus:outline-none focus:border-primary transition-all placeholder-transparent"
+                                    id="password" placeholder=" " type="password" />
+                                <label
+                                    class="absolute left-4 top-4 text-slate-400 transition-all pointer-events-none origin-left"
+                                    for="password">Password</label>
+                                <div
+                                    class="absolute right-4 top-4 text-slate-600 group-focus-within:text-primary flex gap-2">
+                                    <button class="hover:text-primary transition-colors" type="button">
+                                        <span class="material-symbols-outlined">visibility</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Confirm Password -->
+                            <div class="relative group">
+                                <input
+                                    class="form-input peer w-full bg-background-dark/50 border border-slate-custom/50 rounded-lg px-4 py-4 text-slate-100 focus:outline-none focus:border-primary transition-all placeholder-transparent"
+                                    id="confirm_password" placeholder=" " type="password" />
+                                <label
+                                    class="absolute left-4 top-4 text-slate-400 transition-all pointer-events-none origin-left"
+                                    for="confirm_password">Confirm Password</label>
+                                <div class="absolute right-4 top-4 text-slate-600 group-focus-within:text-primary">
+                                    <span class="material-symbols-outlined">lock</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 px-1">
+                                <input
+                                    class="rounded border-slate-custom bg-background-dark text-primary focus:ring-primary h-4 w-4"
+                                    id="terms" type="checkbox" />
+                                <label class="text-xs text-slate-400" for="terms">I agree to the <a
+                                        class="text-primary hover:underline" href="#">Terms of Service</a> and <a
+                                        class="text-primary hover:underline" href="#">Privacy Policy</a></label>
+                            </div>
+                            <button
+                                class="w-full bg-primary text-background-dark font-bold py-4 rounded-lg shadow-[0_0_20px_rgba(37,209,244,0.3)] hover:shadow-[0_0_30px_rgba(37,209,244,0.5)] transition-all hover:scale-[1.01] active:scale-[0.98]"
+                                type="submit">
+                                Create Account
+                            </button>
+                        </form>
+                        <div class="mt-8 text-center">
+                            <p class="text-slate-400 text-sm">
+                                Already have an account?
+                                <a class="text-primary font-bold hover:underline ml-1" href="#">Log in</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Trust Badges -->
+                <div
+                    class="mt-12 flex justify-center gap-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">verified_user</span>
+                        <span class="text-[10px] uppercase tracking-widest font-bold">Secure Infrastructure</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">public</span>
+                        <span class="text-[10px] uppercase tracking-widest font-bold">Global Nodes</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">encrypted</span>
+                        <span class="text-[10px] uppercase tracking-widest font-bold">E2E Encryption</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <!-- Footer -->
+        <footer class="p-6 md:px-12 border-t border-slate-custom/20 text-center text-slate-500 text-xs">
+            <p>© 2024 Sentience Network. All protocols reserved.</p>
+        </footer>
+    </div>
+    <!-- Decorative Elements -->
+    <div
+        class="fixed bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent blur-sm">
+    </div>
+</body>
+
+</html>

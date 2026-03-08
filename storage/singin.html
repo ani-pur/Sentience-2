@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#25d1f4",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#101f22",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <title>Sentience - Login</title>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+        <div class="layout-container flex h-full grow flex-col">
+            <!-- Navigation / Header -->
+            <header class="flex items-center justify-between px-6 py-6 md:px-12">
+                <div class="flex items-center gap-3">
+                    <div class="text-primary">
+                        <svg class="w-8 h-8" fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z" fill="currentColor"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-slate-900 dark:text-slate-100 text-xl font-bold tracking-tight">Sentience</h2>
+                </div>
+            </header>
+            <!-- Main Content Area -->
+            <main class="flex-1 flex items-center justify-center px-4 py-12">
+                <div
+                    class="w-full max-w-[440px] bg-white dark:bg-slate-900/40 p-8 rounded-xl shadow-2xl border border-slate-200 dark:border-primary/10 backdrop-blur-sm">
+                    <!-- Login Header -->
+                    <div class="text-center mb-10">
+                        <h1 class="text-3xl font-bold tracking-tight mb-2">Welcome Back</h1>
+                        <p class="text-slate-500 dark:text-slate-400 text-sm">Please enter your details to sign in</p>
+                    </div>
+                    <!-- Login Form -->
+                    <form action="#" class="space-y-6" method="POST">
+                        <!-- Email Field -->
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium px-1" for="email">Email address</label>
+                            <div class="relative group">
+                                <div
+                                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary transition-colors">
+                                    <span class="material-symbols-outlined text-[20px]">mail</span>
+                                </div>
+                                <input
+                                    class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white"
+                                    id="email" name="email" placeholder="name@company.com" required="" type="email" />
+                            </div>
+                        </div>
+                        <!-- Password Field -->
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center px-1">
+                                <label class="text-sm font-medium" for="password">Password</label>
+                                <a class="text-xs font-semibold text-primary hover:underline" href="#">Forgot
+                                    password?</a>
+                            </div>
+                            <div class="relative group">
+                                <div
+                                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary transition-colors">
+                                    <span class="material-symbols-outlined text-[20px]">lock</span>
+                                </div>
+                                <input
+                                    class="w-full pl-10 pr-12 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white"
+                                    id="password" name="password" placeholder="••••••••" required="" type="password" />
+                                <button
+                                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                                    type="button">
+                                    <span class="material-symbols-outlined text-[20px]">visibility</span>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Submit Button -->
+                        <button
+                            class="w-full bg-primary hover:bg-primary/90 text-background-dark font-bold py-3 px-4 rounded-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+                            type="submit">
+                            Log In
+                        </button>
+                    </form>
+                    <!-- Divider -->
+                    <div class="relative my-8">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-slate-200 dark:border-slate-700"></div>
+                        </div>
+                        <div class="relative flex justify-center text-xs uppercase">
+                            <span class="bg-white dark:bg-background-dark px-2 text-slate-500">Or continue with</span>
+                        </div>
+                    </div>
+                    <!-- Social Login (Visual Placeholder) -->
+                    <div class="grid grid-cols-2 gap-4 mb-8">
+                        <button
+                            class="flex items-center justify-center gap-2 py-2 px-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm font-medium">
+                            <img alt="" class="w-4 h-4" data-alt="Google Logo Icon"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmppVsSAQ8UhHj2NMFprwy3x8BVHFht1QucgVa2AQ5CBfo9_i-x_zJ7tUM6kNgyffodUbug_ruJivBSueY6_IyLPq55w8qrdZXpdZHg2qRXNtQSYMZvhwH_c2ZQgUI61Xttb0Y8PkunmfO8zR8nGx7CF2YUbUk8RJosM28HtEIUUoik4B2T4Eqo8hqhz4IUlB7RsDZZeqUxvjaoNzrZN92zMDUFznRrYCAYZigrG99Fl0sDgilPJ3udvqMYMciyYt_3Mc6WLF2j0Y" />
+                            Google
+                        </button>
+                        <button
+                            class="flex items-center justify-center gap-2 py-2 px-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm font-medium">
+                            <span class="material-symbols-outlined text-[20px]">terminal</span>
+                            Github
+                        </button>
+                    </div>
+                    <!-- Footer Link -->
+                    <p class="text-center text-sm text-slate-500 dark:text-slate-400">
+                        Don't have an account?
+                        <a class="font-semibold text-primary hover:underline" href="#">Create an account</a>
+                    </p>
+                </div>
+            </main>
+            <!-- Bottom Decoration -->
+            <footer class="p-6 text-center text-xs text-slate-500 dark:text-slate-600">
+                © 2024 Sentience AI Platforms. All rights reserved.
+            </footer>
+            <!-- Background subtle glows -->
+            <div class="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none overflow-hidden">
+                <div class="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[120px]">
+                </div>
+                <div class="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[120px]">
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

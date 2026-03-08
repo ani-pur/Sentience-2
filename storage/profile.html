@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Sentience - User Profile Dashboard</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#25d1f4",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#101f22",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Manrope', sans-serif;
+        }
+
+        .glass-panel {
+            background: rgba(34, 66, 73, 0.2);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(37, 209, 244, 0.1);
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen">
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+        <header
+            class="flex items-center justify-between whitespace-nowrap border-b border-solid border-primary/10 px-6 py-4 lg:px-20">
+            <div class="flex items-center gap-3">
+                <div class="size-8 text-primary">
+                    <svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z" fill="currentColor"></path>
+                    </svg>
+                </div>
+                <h2 class="text-xl font-bold leading-tight tracking-tight">Sentience</h2>
+            </div>
+            <div class="flex items-center gap-4">
+                <button
+                    class="flex items-center justify-center rounded-lg h-10 w-10 bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                    <span class="material-symbols-outlined">notifications</span>
+                </button>
+                <button
+                    class="flex items-center justify-center rounded-lg h-10 w-10 bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                    <span class="material-symbols-outlined">settings</span>
+                </button>
+            </div>
+        </header>
+        <main class="flex-1 flex flex-col items-center justify-start py-12 px-4 md:px-0">
+            <div class="w-full max-w-2xl">
+                <div class="flex flex-col items-center mb-10">
+                    <div class="relative group">
+                        <div
+                            class="size-32 rounded-full border-4 border-primary/20 p-1 bg-gradient-to-tr from-primary/40 to-transparent">
+                            <div
+                                class="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+                                <span class="material-symbols-outlined text-5xl text-primary/50">person</span>
+                            </div>
+                        </div>
+                        <button
+                            class="absolute bottom-0 right-0 size-10 rounded-full bg-primary text-background-dark flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
+                            <span class="material-symbols-outlined text-xl">photo_camera</span>
+                        </button>
+                    </div>
+                    <h1 class="mt-6 text-3xl font-extrabold tracking-tight">Alex Rivers</h1>
+                    <p class="text-slate-500 dark:text-slate-400 font-medium">Verified Sentience Member</p>
+                </div>
+                <div class="glass-panel rounded-xl p-6 md:p-8 space-y-8">
+                    <div class="space-y-6">
+                        <div
+                            class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-primary/5">
+                            <div class="flex items-center gap-4">
+                                <div
+                                    class="size-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                    <span class="material-symbols-outlined">badge</span>
+                                </div>
+                                <div class="flex flex-col">
+                                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Full Name
+                                    </p>
+                                    <p class="text-lg font-medium">Alex Rivers</p>
+                                </div>
+                            </div>
+                            <button
+                                class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary text-sm font-bold hover:bg-primary/20 transition-colors self-start md:self-center">
+                                <span class="material-symbols-outlined text-sm">edit</span>
+                                Edit
+                            </button>
+                        </div>
+                        <div
+                            class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-primary/5">
+                            <div class="flex items-center gap-4">
+                                <div
+                                    class="size-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                    <span class="material-symbols-outlined">mail</span>
+                                </div>
+                                <div class="flex flex-col">
+                                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Email
+                                        Address</p>
+                                    <p class="text-lg font-medium">alex.rivers@sentience.io</p>
+                                </div>
+                            </div>
+                            <button
+                                class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary text-sm font-bold hover:bg-primary/20 transition-colors self-start md:self-center">
+                                <span class="material-symbols-outlined text-sm">edit</span>
+                                Edit
+                            </button>
+                        </div>
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div class="flex items-center gap-4">
+                                <div
+                                    class="size-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                    <span class="material-symbols-outlined">lock</span>
+                                </div>
+                                <div class="flex flex-col">
+                                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Password
+                                    </p>
+                                    <p class="text-lg font-medium tracking-widest">••••••••••••</p>
+                                </div>
+                            </div>
+                            <button
+                                class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary text-sm font-bold hover:bg-primary/20 transition-colors self-start md:self-center">
+                                <span class="material-symbols-outlined text-sm">edit</span>
+                                Edit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-8 flex flex-col gap-4">
+                    <h3 class="text-sm font-bold uppercase tracking-[0.2em] text-slate-500 px-2">Account Actions</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div
+                            class="glass-panel p-4 rounded-xl flex items-center justify-between hover:bg-primary/5 transition-colors cursor-pointer group">
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-primary">shield_person</span>
+                                <span class="font-medium">Two-Factor Auth</span>
+                            </div>
+                            <span
+                                class="material-symbols-outlined text-slate-500 group-hover:translate-x-1 transition-transform">chevron_right</span>
+                        </div>
+                        <div
+                            class="glass-panel p-4 rounded-xl flex items-center justify-between hover:bg-primary/5 transition-colors cursor-pointer group">
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-primary">history</span>
+                                <span class="font-medium">Login Activity</span>
+                            </div>
+                            <span
+                                class="material-symbols-outlined text-slate-500 group-hover:translate-x-1 transition-transform">chevron_right</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-12 text-center">
+                    <button
+                        class="text-slate-500 hover:text-red-400 transition-colors text-sm font-medium flex items-center gap-2 mx-auto">
+                        <span class="material-symbols-outlined text-lg">logout</span>
+                        Sign out from all devices
+                    </button>
+                </div>
+            </div>
+        </main>
+        <footer class="py-8 px-6 lg:px-20 border-t border-primary/5 text-center text-slate-500 text-sm">
+            © 2024 Sentience Neural Systems. All rights reserved.
+        </footer>
+    </div>
+    <div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+        <div class="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/5 blur-[120px] rounded-full"></div>
+        <div class="absolute -bottom-[10%] -right-[10%] w-[30%] h-[30%] bg-primary/5 blur-[100px] rounded-full"></div>
+    </div>
+</body>
+
+</html>
