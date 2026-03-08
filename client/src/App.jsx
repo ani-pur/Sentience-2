@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { useUser, useBrands, useSentiment, useDaily, usePosts } from "./hooks/useApi";
+import { useUser, useBrands, useSentiment, useDaily, usePosts, useStock } from "./hooks/useApi";
 import Header from "./components/Header";
 import SentimentChart from "./components/SentimentChart";
 import MetricCards from "./components/MetricCards";
 import PostsFeed from "./components/PostsFeed";
+import StockChart from "./components/StockChart";
 
 function App() {
   const { user, loading: authLoading } = useUser();
@@ -12,6 +13,7 @@ function App() {
   const { data: sentimentData, loading: chartLoading } = useSentiment(selectedBrand);
   const { data: dailyData, loading: dailyLoading } = useDaily(selectedBrand);
   const { posts, loading: postsLoading } = usePosts(selectedBrand);
+  const { stock, loading: stockLoading } = useStock(selectedBrand);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -48,6 +50,7 @@ function App() {
         <MetricCards data={dailyData} loading={dailyLoading} />
         <SentimentChart data={sentimentData} brand={selectedBrand} loading={chartLoading} />
         <PostsFeed posts={posts} loading={postsLoading} />
+        <StockChart stock={stock} brand={selectedBrand} loading={stockLoading} />
       </main>
     </div>
   );

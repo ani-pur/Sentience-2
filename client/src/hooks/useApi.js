@@ -54,3 +54,8 @@ export function usePosts(brand) {
   const { data, loading } = useFetch(`/api/posts?brand=${brand}`, [brand]);
   return { posts: data || [], loading };
 }
+
+export function useStock(brand) {
+  const { data, loading } = useFetch(`/api/stock?brand=${brand}`, [brand]);
+  return { stock: data || null, loading };
+}
