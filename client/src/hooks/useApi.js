@@ -55,7 +55,8 @@ export function usePosts(brand) {
   return { posts: data || [], loading };
 }
 
-export function useStock(brand) {
-  const { data, loading } = useFetch(`/api/stock?brand=${brand}`, [brand]);
+export function useStock(brand, startDate) {
+  const from = startDate ? `&from=${startDate}` : "";
+  const { data, loading } = useFetch(`/api/stock?brand=${brand}${from}`, [brand, startDate]);
   return { stock: data || null, loading };
 }

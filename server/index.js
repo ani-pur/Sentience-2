@@ -409,7 +409,10 @@ app.get("/api/stock", async (req, res) => {
   }
 
   const end = Math.floor(Date.now() / 1000);
-  const start = end - 90 * 24 * 60 * 60; // 90 days
+  // Use the caller's start date (aligns with sentiment graph) or fall back to 90 days
+  const start = req.query.from
+    ? Math.floor(new Date(req.query.from).getTime() / 1000)
+    : end - 90 * 24 * 60 * 60;
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?period1=${start}&period2=${end}&interval=1d`;
 
   try {

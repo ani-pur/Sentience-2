@@ -13,7 +13,8 @@ function App() {
   const { data: sentimentData, loading: chartLoading } = useSentiment(selectedBrand);
   const { data: dailyData, loading: dailyLoading } = useDaily(selectedBrand);
   const { posts, loading: postsLoading } = usePosts(selectedBrand);
-  const { stock, loading: stockLoading } = useStock(selectedBrand);
+  const sentimentStart = sentimentData.find((d) => !d.is_projection)?.date ?? null;
+  const { stock, loading: stockLoading } = useStock(selectedBrand, sentimentStart);
 
   useEffect(() => {
     if (!authLoading && !user) {
