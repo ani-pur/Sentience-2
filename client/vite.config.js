@@ -26,6 +26,11 @@ export default defineConfig({
         changeOrigin: true,
         headers: { 'x-vite-proxy': '1' },
       },
+      '/landing': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        headers: { 'x-vite-proxy': '1' },
+      },
     },
   },
 })

@@ -121,6 +121,11 @@ app.get("/", (req, res) => {
   sendPage(res, "landingPage.html");
 });
 
+// Landing page (also accessible at /landing for direct Vite proxy access)
+app.get("/landing", (req, res) => {
+  sendPage(res, "landingPage.html");
+});
+
 // Login page
 app.get("/login", (req, res) => {
   if (req.session && req.session.user) {

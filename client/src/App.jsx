@@ -18,7 +18,7 @@ function App() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      window.location.href = '/login';
+      window.location.href = '/landing';
     }
   }, [user, authLoading]);
 
