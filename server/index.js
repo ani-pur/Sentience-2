@@ -1,4 +1,6 @@
 require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
+const dns = require("dns");
+dns.setDefaultResultOrder("ipv4first");
 const express = require("express");
 const session = require("express-session");
 const initSqlJs = require("sql.js");
