@@ -1,0 +1,12 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <title>Sentience Logo</title>
+  
+  <!-- Mirroring the logo on the y-axis (transform="scale(-1, 1)" and centered via translate) -->
+  <g transform="translate(100, 0) scale(-1, 1)">
+    <!-- Top Piece -->
+    <path d="M 50 14 L 14 34 L 14 49 L 50 29 L 75 43 L 42 61.5 L 50 66 L 86 46 L 86 31 Z" fill="#25d1f4" />
+    
+    <!-- Bottom Piece -->
+    <path d="M 50 86 L 86 66 L 86 51 L 50 71 L 25 57 L 58 38.5 L 50 34 L 14 54 L 14 69 Z" fill="#25d1f4" />
+  </g>
+</svg>
