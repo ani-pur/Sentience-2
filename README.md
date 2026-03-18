@@ -1,3 +1,8 @@
+
+Forked to make minor changes; will self-host and give access to all original contributors.
+
+---
+
 # Sentience
 
 **Mapping the AI ecosystem's sentiment landscape — tracking how public perception of AI companies ripples through their hardware supply chain and predicting where sentiment is heading next.**
